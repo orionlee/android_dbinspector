@@ -1,5 +1,8 @@
 package im.dino.dbinspector.fragments;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -28,11 +31,12 @@ import im.dino.dbinspector.helpers.DialogHelper;
 import im.dino.dbinspector.helpers.PragmaType;
 import im.dino.dbinspector.helpers.RecordScreenType;
 import im.dino.dbinspector.helpers.models.TableRowModel;
+import im.dino.dbinspector.services.ClearTableIntentService;
 
 /**
  * Created by dino on 24/02/14.
  */
-public class TableFragment extends Fragment implements ActionBar.OnNavigationListener {
+public class TableFragment extends Fragment implements ActionBar.OnNavigationListener, DialogHelper.SearchQueryListener {
 
     private static final String KEY_DATABASE = "database_name";
 
@@ -78,6 +82,9 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
 
     private int currentPage;
 
+    private ArrayList<TableRowModel> conditionList = new ArrayList<>();
+
+    private BroadcastReceiver mClearTableReceiver = new ClearTableReceiver();
     private ArrayList<String> columnNames;
 
     private View.OnClickListener nextListener = new View.OnClickListener() {
@@ -86,20 +93,19 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
         public void onClick(View v) {
             currentPage++;
             adapter.nextPage();
-            showContent(adapter.getContentPage());
+            showContent(conditionList.isEmpty() ? adapter.getContentPage() : adapter.getContentPage(conditionList));
 
             scrollView.scrollTo(0, 0);
             horizontalScrollView.scrollTo(0, 0);
         }
     };
-
     private View.OnClickListener previousListener = new View.OnClickListener() {
 
         @Override
         public void onClick(View v) {
             currentPage--;
             adapter.previousPage();
-            showContent(adapter.getContentPage());
+            showContent(conditionList.isEmpty() ? adapter.getContentPage() : adapter.getContentPage(conditionList));
 
             scrollView.scrollTo(0, 0);
             horizontalScrollView.scrollTo(0, 0);
@@ -172,6 +178,13 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
     public void onResume() {
         super.onResume();
         setUpActionBar();
+        ClearTableIntentService.registerListener(getActivity(), mClearTableReceiver);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        ClearTableIntentService.unregisterListener(getActivity(), mClearTableReceiver);
     }
 
     @Override
@@ -201,22 +214,17 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
                     .addToBackStack("Settings")
                     .commit();
             getFragmentManager().executePendingTransactions();
-            return true;
         } else if (item.getItemId() == R.id.dbinspector_action_search) {
-            DialogHelper.showSearchDialog(getActivity(), databaseFile, tableName, new DialogHelper.SearchQueryListener() {
-                @Override
-                public void onQuerySubmited(ArrayList<TableRowModel> conditionList) {
-                    List<TableRow> rows = adapter.getContentPage(conditionList);
-                    showContent(rows);
-                }
-            });
+            DialogHelper.showSearchDialog(getActivity(), databaseFile, tableName, this);
         } else if (item.getItemId() == R.id.dbinspector_action_add) {
             showRecord(RecordScreenType.CREATE, null);
+        } else if (item.getItemId() == R.id.dbinspector_action_clear_table) {
+            ClearTableAlertDialogFragment fragment = ClearTableAlertDialogFragment.newInstance(databaseFile, tableName);
+            fragment.show(getFragmentManager(), "CONFIRM_DIALOG");
         }
 
         return super.onOptionsItemSelected(item);
     }
-
 
     private void setUpActionBar() {
         final ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
@@ -301,6 +309,28 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
         return true;
     }
 
+    @Override
+    public void onQuerySubmited(ArrayList<TableRowModel> conditionList) {
+        this.conditionList = conditionList;
+        List<TableRow> rows = adapter.getContentPage(conditionList);
+        showContent(rows);
+    }
+
+    /**
+     * Listen for the result of deleting the content of a table.
+     */
+    private class ClearTableReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (ClearTableIntentService.isSuccess(intent)) {
+                adapter.resetPage();
+                showContent(adapter.getContentPage());
+            }
+
+        }
+
+    }
+
     private ArrayList<String> getTableRowValues(int rowIndex) {
         TableRow tableRow = (TableRow) tableLayout.getChildAt(rowIndex);
         return getTableRowValues(tableRow);
@@ -308,6 +338,10 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
 
     private ArrayList<String> getTableRowValues(TableRow tableRow) {
         ArrayList<String> values = new ArrayList<>();
+
+        if (tableRow == null) {
+            return values;
+        }
 
         for (int i = 0; i < tableRow.getChildCount(); i++) {
             TextView textView = (TextView) tableRow.getChildAt(i);
@@ -324,4 +358,7 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
                 .commit();
         getFragmentManager().executePendingTransactions();
     }
+
 }
+
+

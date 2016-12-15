@@ -8,12 +8,27 @@
             android:title="@string/dbinspector_action_search"
             android:orderInCategory="100"
             app:actionViewClass="android.support.v7.widget.SearchView"
-            android:icon="@drawable/abc_ic_search_api_mtrl_alpha"
+            android:icon="@android:drawable/ic_menu_search"
             app:showAsAction="collapseActionView|always"/>
+
     <item
             android:id="@+id/dbinspector_action_copy"
             android:title="@string/dbinspector_action_copy"
             android:orderInCategory="101"
-            android:icon="@drawable/abc_ic_menu_copy_mtrl_am_alpha"
+            android:icon="@drawable/dbinspector_copy"
+            app:showAsAction="ifRoom"/>
+
+    <item
+            android:id="@+id/dbinspector_action_share"
+            android:title="@string/dbinspector_action_share"
+            android:orderInCategory="102"
+            android:icon="@drawable/dbinspector_share"
+            app:showAsAction="ifRoom"/>
+
+    <item
+            android:id="@+id/dbinspector_action_import"
+            android:title="@string/dbinspector_action_import"
+            android:orderInCategory="103"
+            android:icon="@drawable/dbinspector_file_upload"
             app:showAsAction="ifRoom"/>
 </menu>

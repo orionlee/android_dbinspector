@@ -1,6 +1,44 @@
 Changelog
 =========
 
+## Version 3.3.0
+
+* New: Action to delete contents of a table (thanks @ignaciotcrespo)
+* Fix: Build error when using support lib 24.0.0 (thanks @rkrsgithub and @gmbett)
+
+## Version 3.2.4
+
+_2016-05-04_
+
+* Fix: The new CBL format is now properly supported (.cblite2 directory)
+
+## Version 3.2.3
+
+_2016-03-04_
+
+* Fix: Using in app which uses support libs 23.2.0+ (thanks @MarcBernstein)
+
+## Version 3.2.2
+
+_2016-01-27_
+
+* New: Support new CBL file suffix (.cblite2)
+
+## Version 3.2.1
+
+_2015-07-12_
+
+* Fix: Resolved crash that happened if you were on the last page of the content and switched the display to show more rows per page
+
+## Version 3.2.0
+
+_2015-07-09_
+
+* New: Show external databases if in folder returned by `context.getExternalFilesDir(null)` (thanks to @Aexyn)
+* New: Add option to share selected database (thanks to @dmarin)
+* New: Import database from file (thanks to @dmarin)
+* Fix: Set taskAffinity for `DbInspectorActivity` so the launcher opens DbInspector and not the app (thanks to @nicopico-dev)
+
 ## Version 3.1.0
 
 _2015-03-25_
@@ -48,7 +86,7 @@ _2014-04-07_
 
 _2014-03-31_
 
- * Fix: Support blob type (thanks to user ```bclymer```)
+ * Fix: Support blob type (thanks to @bclymer)
 
 ## Version 1.0.4
 

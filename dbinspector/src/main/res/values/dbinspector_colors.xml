@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="dbinspector_alternate_row_background">#F2F2F2</color>
+    <color name="dbinspector_sort_column_header_foreground">#1E88E5</color>
 </resources>

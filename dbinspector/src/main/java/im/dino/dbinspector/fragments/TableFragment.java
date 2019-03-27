@@ -241,6 +241,13 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
         showingContent = true;
         tableLayout.removeAllViews();
 
+        adapter.setOnClickColumnHeaderListener(new TablePageAdapter.OnClickColumnHeaderListener() {
+            @Override
+            public void onClick(String columnName) {
+                adapter.toggleOrderByColumn(columnName);
+                showContent();
+            }
+        });
         List<TableRow> rows = adapter.getContentPage();
 
         for (TableRow row : rows) {

@@ -5,7 +5,10 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.TableRow;
 import android.widget.TextView;
 
@@ -26,12 +29,28 @@ import im.dino.dbinspector.helpers.PragmaType;
 public class TablePageAdapter {
 
     public static final int DEFAULT_ROWS_PER_PAGE = 10;
+    public static final SortOrder DEFAULT_SORT_ORDER = SortOrder.ASC;
+
+    public interface OnClickColumnHeaderListener {
+        void onClick(String columnName);
+    }
+
+    public enum SortOrder {
+        ASC, DESC;
+        public SortOrder toggle() {
+            return (DESC == this) ? ASC : DESC;
+        }
+    }
 
     private final Context context;
 
     private final File databaseFile;
 
     private final String tableName;
+
+    @NonNull
+    private String orderByColumnName = "";
+    private SortOrder orderBySortOrder = DEFAULT_SORT_ORDER;
 
     private int rowsPerPage = DEFAULT_ROWS_PER_PAGE;
 
@@ -45,6 +64,8 @@ public class TablePageAdapter {
 
     private TablePageFormatters.IRowFormatter rowFormatter;
     private TablePageFormatters.ICellViewFormatter defaultCellViewFormatter;
+
+    private OnClickColumnHeaderListener onClickColumnHeaderListener = null;
 
     public TablePageAdapter(Context context, File databaseFile, String tableName, int startPage) {
 
@@ -109,7 +130,8 @@ public class TablePageAdapter {
         CursorOperation<List<TableRow>> operation = new CursorOperation<List<TableRow>>(databaseFile) {
             @Override
             public Cursor provideCursor(SQLiteDatabase database) {
-                return database.query(tableName, null, null, null, null, null, null);
+                String orderBy = TextUtils.isEmpty(orderByColumnName) ? null : orderByColumnName + " " + orderBySortOrder.name();
+                return database.query(tableName, null, null, null, null, null, orderBy);
             }
 
             @Override
@@ -131,13 +153,30 @@ public class TablePageAdapter {
         for (int col = 0; col < cursor.getColumnCount(); col++) {
             final String columnName = cursor.getColumnName(col);
             TextView textView = new TextView(context);
-            textView.setText(columnName);
+            if (columnName.equals(orderByColumnName)) {
+                // prepend up/down arrows (unicodes ↑ ↓) to show sort order
+                // (make it prepend rather than append in case the column width is shortened so that it gets truncated)
+                String displayText = (orderBySortOrder == SortOrder.ASC ? "\u2191 " : "\u2193 ")
+                        + columnName;
+                textView.setText(displayText);
+                textView.setTextColor(context.getResources().getColor(R.color.dbinspector_sort_column_header_foreground));
+            } else {
+                textView.setText(columnName);
+            }
             textView.setPadding(paddingPx, paddingPx / 2, paddingPx, paddingPx / 2);
             textView.setTypeface(Typeface.DEFAULT_BOLD);
             TablePageFormatters.ICellViewFormatter headerViewFormatter = rowFormatter.getHeaderViewFormatter(columnName);
             if (headerViewFormatter != null) {
                 headerViewFormatter.formatView(textView);
             }
+            textView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (onClickColumnHeaderListener != null) {
+                        onClickColumnHeaderListener.onClick(columnName);
+                    }
+                }
+            });
             header.addView(textView);
         }
 
@@ -226,4 +265,40 @@ public class TablePageAdapter {
     public void resetPage() {
         position = 0;
     }
+
+    public OnClickColumnHeaderListener getOnClickColumnHeaderListener() {
+        return onClickColumnHeaderListener;
+    }
+
+    public void setOnClickColumnHeaderListener(OnClickColumnHeaderListener onClickColumnHeaderListener) {
+        this.onClickColumnHeaderListener = onClickColumnHeaderListener;
+    }
+
+    @NonNull
+    public String getOrderByColumnName() {
+        return orderByColumnName;
+    }
+
+    public SortOrder getOrderBySortOrder() {
+        return orderBySortOrder;
+    }
+
+    public void toggleOrderByColumn(@NonNull String orderByColumnName) {
+
+        if (orderByColumnName.equals(this.orderByColumnName)) {
+            // case toggle order of the currently sorted column
+            this.orderBySortOrder = this.orderBySortOrder.toggle();
+        } else { // case specify a new sort column (or reset to null)
+            this.orderByColumnName = orderByColumnName;
+            this.orderBySortOrder = DEFAULT_SORT_ORDER; // reset sort order to defaults too
+        }
+        resetPage(); // reset paging as well once order by is changed.
+    }
+
+    // Use cases: restore settings from preference, screen rotation, etc.
+    public void restoreOrderBy(@NonNull String orderByColumnName, SortOrder orderBySortOrder) {
+        this.orderByColumnName = orderByColumnName;
+        this.orderBySortOrder = orderBySortOrder;
+    }
+
 }

@@ -27,6 +27,7 @@ import im.dino.dbinspector.helpers.PragmaType;
 public class TablePageAdapter {
 
     public static final int DEFAULT_ROWS_PER_PAGE = 10;
+    public static final SortOrder DEFAULT_SORT_ORDER = SortOrder.ASC;
 
     public interface OnClickColumnHeaderListener {
         void onClick(String columnName);
@@ -38,8 +39,6 @@ public class TablePageAdapter {
             return (DESC == this) ? ASC : DESC;
         }
     }
-
-    private static final SortOrder DEFAULT_SORT_ORDER = SortOrder.ASC;
 
     private final Context context;
 
@@ -264,5 +263,10 @@ public class TablePageAdapter {
         resetPage(); // reset paging as well once order by is changed.
     }
 
+    // Use cases: restore settings from preference, screen rotation, etc.
+    public void restoreOrderBy(@NonNull String orderByColumnName, SortOrder orderBySortOrder) {
+        this.orderByColumnName = orderByColumnName;
+        this.orderBySortOrder = orderBySortOrder;
+    }
 
 }

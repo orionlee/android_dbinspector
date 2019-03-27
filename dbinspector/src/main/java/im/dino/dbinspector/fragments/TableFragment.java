@@ -26,6 +26,7 @@ import java.util.List;
 
 import im.dino.dbinspector.R;
 import im.dino.dbinspector.adapters.TablePageAdapter;
+import im.dino.dbinspector.adapters.TablePageAdapter.SortOrder;
 import im.dino.dbinspector.helpers.PragmaType;
 import im.dino.dbinspector.services.ClearTableIntentService;
 
@@ -43,6 +44,9 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
     private static final String KEY_PAGE = "current_page";
 
     private static final String KEY_LAST_PRAGMA = "last_pragma";
+
+    private static final String KEY_ORDER_BY_COLUMN_NAME = "order_by_column_name";
+    private static final String KEY_ORDER_BY_SORT_ORDER = "order_by_sort_order";
 
     public static final int DROPDOWN_CONTENT_POSITION = 0;
 
@@ -127,11 +131,6 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
             tableName = getArguments().getString(KEY_TABLE);
         }
 
-        if (savedInstanceState != null) {
-            showingContent = savedInstanceState.getBoolean(KEY_SHOWING_CONTENT, true);
-            lastPragmaType = PragmaType.values()[savedInstanceState.getInt(KEY_LAST_PRAGMA, 1)];
-            currentPage = savedInstanceState.getInt(KEY_PAGE, 0);
-        }
     }
 
     @Override
@@ -159,7 +158,21 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
         super.onActivityCreated(savedInstanceState);
 
         setUpActionBar();
+        String orderByColumnName = "";
+        SortOrder orderBySortOrder = TablePageAdapter.DEFAULT_SORT_ORDER;
+        if (savedInstanceState != null) {
+            showingContent = savedInstanceState.getBoolean(KEY_SHOWING_CONTENT, true);
+            lastPragmaType = PragmaType.values()[savedInstanceState.getInt(KEY_LAST_PRAGMA, 1)];
+            currentPage = savedInstanceState.getInt(KEY_PAGE, 0);
+            orderByColumnName = savedInstanceState.getString(KEY_ORDER_BY_COLUMN_NAME);
+            if (orderByColumnName == null) {
+                orderByColumnName = "";
+            }
+            orderBySortOrder = SortOrder.values()[savedInstanceState.getInt(KEY_ORDER_BY_SORT_ORDER, 1)];
+        }
         adapter = new TablePageAdapter(getActivity(), databaseFile, tableName, currentPage);
+        adapter.restoreOrderBy(orderByColumnName, orderBySortOrder);
+
         if (showingContent) {
             showContent();
         } else {
@@ -185,6 +198,8 @@ public class TableFragment extends Fragment implements ActionBar.OnNavigationLis
         outState.putBoolean(KEY_SHOWING_CONTENT, showingContent);
         outState.putInt(KEY_PAGE, currentPage);
         outState.putInt(KEY_LAST_PRAGMA, lastPragmaType.ordinal());
+        outState.putString(KEY_ORDER_BY_COLUMN_NAME, adapter.getOrderByColumnName());
+        outState.putInt(KEY_ORDER_BY_SORT_ORDER, adapter.getOrderBySortOrder().ordinal());
         super.onSaveInstanceState(outState);
     }
 
